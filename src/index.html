@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+</head>
+<body>
+    <input type="text" id="name" placeholder="Nome">
+    <input type="text" id="room" placeholder="Sala">
+    <button id="join">Entrar na Sala</button>
+
+    <div id="chat" style="display:none;">
+        <div id="messages"></div>
+        <input type="text" id="message" placeholder="Mensagem">
+        <button id="send">Enviar</button>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        document.getElementById('join').onclick = () => {
+            const name = document.getElementById('name').value;
+            const room = document.getElementById('room').value;
+            socket.emit('join', { name, room });
+            document.getElementById('chat').style.display = 'block';
+        };
+
+        socket.on('message', (message) => {
+            const messages = document.getElementById('messages');
+            const messageElement = document.createElement('div');
+            messageElement.textContent = message.name ? `${message.name}: ${message.message}` : message.message;
+            messages.appendChild(messageElement);
+        });
+
+        socket.on('users', (users) => {
+            console.log('Usuários na sala:', users);
+        });
+
+        document.getElementById('send').onclick = () => {
+            const message = document.getElementById('message').value;
+            const room = document.getElementById('room').value;
+            socket.emit('message', { room, message });
+            document.getElementById('message').value = '';
+        };
+    </script>
+</body>
+</html>
