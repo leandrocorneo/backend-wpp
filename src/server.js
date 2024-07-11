@@ -12,22 +12,25 @@ const users = [];
 
 io.on('connection', (socket) => {
     socket.on('disconnect', () => {
+        const index = users.findIndex(user => user.id === socket.id);
+        if (index !== -1) {
+            const user = users.splice(index, 1)[0];
+            io.to(user.room).emit('message', { name: null, message: `${user.name} saiu do chat`, room: user.room });
+            io.to(user.room).emit('users', users.filter(u => u.room === user.room));
+        }
+    });
 
-    })
-
-    socket.on('join', (name) => {
-        const user = {
-            id: socket.id, 
-            name,
-        };
+    socket.on('join', ({ roomName, userName }) => {
+        const user = { id: socket.id, name: userName, room: roomName };
+        socket.join(roomName);
         users.push(user);
-        // io.emit('message', {name: null, message: `${name} entrou no chat`});
-        io.emit('users', users);
-    })
+        // io.to(roomName).emit('message', { name: null, message: `${userName} entrou no chat`, room: roomName });
+        io.to(roomName).emit('users', users.filter(u => u.room === roomName));
+    });
 
-    socket.on('message', (message) => {
-        io.emit('message', message);
-    })
-})
+    socket.on('message', ({ roomName, message }) => {
+        io.to(roomName).emit('message', { ...message, room: roomName });
+    });
+});
 
-server.listen(port, () => console.log(`rodando na porta: ${port}`));
+server.listen(port, () => console.log(`Server running on port ${port}`));
